@@ -29,23 +29,30 @@ jobs:
         run: |
           npm install
 
-      - name: Validate Web Assets
+      - name: Add Android Platform & Assets
         run: |
-          # If index.html is nested under www/www/, pull it up to www/
-          if [ -f www/www/index.html ]; then
-            cp www/www/index.html www/index.html
-          fi
-
-          # Ensure www folder and index.html exist
           mkdir -p www
-          if [ ! -f www/index.html ]; then
-            echo "<!DOCTYPE html><html><body><h1>WPC App</h1></body></html>" > www/index.html
-          fi
+          CI=true npx cap add android || true
+          CI=true npx cap sync android
 
-      - name: Add Android Platform & Sync
+      - name: Inject Custom App Branding Icon
         run: |
-          npx cap add android
-          npx cap sync android
+          # Generate modern SVG icon for WPC
+          cat << 'EOF' > icon.svg
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+            <rect width="512" height="512" rx="110" fill="#0b0f19"/>
+            <circle cx="256" cy="256" r="190" stroke="#10b981" stroke-width="20" fill="none"/>
+            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="120" font-weight="900" fill="#10b981">WPC</text>
+          </svg>
+          EOF
+
+          sudo apt-get update && sudo apt-get install -y imagemagick
+          # Convert to Android standard launcher resolutions
+          convert -background none icon.svg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png || true
+          convert -background none icon.svg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png || true
+          convert -background none icon.svg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png || true
+          convert -background none icon.svg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png || true
+          convert -background none icon.svg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
 
       - name: Build Debug APK with Gradle
         run: |
