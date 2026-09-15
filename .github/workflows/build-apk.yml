@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Production Android Release
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Compile Native Android APK
+    name: Compile Signed Release APK & Bundle
     runs-on: ubuntu-latest
 
     steps:
@@ -37,7 +37,6 @@ jobs:
 
       - name: Inject Custom App Branding Icon
         run: |
-          # Generate modern SVG icon for WPC
           cat << 'EOF' > icon.svg
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
             <rect width="512" height="512" rx="110" fill="#0b0f19"/>
@@ -47,22 +46,44 @@ jobs:
           EOF
 
           sudo apt-get update && sudo apt-get install -y imagemagick
-          # Convert to Android standard launcher resolutions
           convert -background none icon.svg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png || true
           convert -background none icon.svg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png || true
           convert -background none icon.svg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png || true
           convert -background none icon.svg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png || true
           convert -background none icon.svg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
 
-      - name: Build Debug APK with Gradle
+      - name: Generate Release Signing Key
+        run: |
+          keytool -genkeypair -v \
+            -keystore android/app/release.keystore \
+            -alias wpc-key \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass wpcsecurepass123 \
+            -keypass wpcsecurepass123 \
+            -dname "CN=WPC, OU=Mobile, O=WPC, L=Chicago, ST=IL, C=US"
+
+      - name: Build Signed Release APK and App Bundle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file=release.keystore \
+            -Pandroid.injected.signing.store.password=wpcsecurepass123 \
+            -Pandroid.injected.signing.key.alias=wpc-key \
+            -Pandroid.injected.signing.key.password=wpcsecurepass123
 
-      - name: Upload Finished APK
+      - name: Upload Signed Production APK
         uses: actions/upload-artifact@v4
         with:
-          name: WPC-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: WPC-Release-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14
+
+      - name: Upload Google Play Bundle (.aab)
+        uses: actions/upload-artifact@v4
+        with:
+          name: WPC-PlayStore-AAB
+          path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 14
