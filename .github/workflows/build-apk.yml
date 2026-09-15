@@ -55,7 +55,7 @@ jobs:
       - name: Generate Release Signing Key
         run: |
           keytool -genkeypair -v \
-            -keystore android/app/release.keystore \
+            -keystore "$GITHUB_WORKSPACE/android/app/release.keystore" \
             -alias wpc-key \
             -keyalg RSA \
             -keysize 2048 \
@@ -69,7 +69,7 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease bundleRelease --no-daemon \
-            -Pandroid.injected.signing.store.file=release.keystore \
+            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/android/app/release.keystore" \
             -Pandroid.injected.signing.store.password=wpcsecurepass123 \
             -Pandroid.injected.signing.key.alias=wpc-key \
             -Pandroid.injected.signing.key.password=wpcsecurepass123
