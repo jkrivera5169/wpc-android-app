@@ -29,13 +29,22 @@ jobs:
         run: |
           npm install
 
-      - name: Prepare Web Assets & Initialize Android
+      - name: Validate Web Assets
         run: |
+          # If index.html is nested under www/www/, pull it up to www/
+          if [ -f www/www/index.html ]; then
+            cp www/www/index.html www/index.html
+          fi
+
+          # Ensure www folder and index.html exist
           mkdir -p www
           if [ ! -f www/index.html ]; then
-            echo "<h1>WPC App Ready</h1>" > www/index.html
+            echo "<!DOCTYPE html><html><body><h1>WPC App</h1></body></html>" > www/index.html
           fi
-          npx cap add android || true
+
+      - name: Add Android Platform & Sync
+        run: |
+          npx cap add android
           npx cap sync android
 
       - name: Build Debug APK with Gradle
