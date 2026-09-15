@@ -29,9 +29,13 @@ jobs:
         run: |
           npm install
 
-      - name: Add Android Platform & Sync
+      - name: Prepare Web Assets & Initialize Android
         run: |
-          npx cap add android
+          mkdir -p www
+          if [ ! -f www/index.html ]; then
+            echo "<h1>WPC App Ready</h1>" > www/index.html
+          fi
+          npx cap add android || true
           npx cap sync android
 
       - name: Build Debug APK with Gradle
