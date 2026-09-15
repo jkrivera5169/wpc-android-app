@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Wellness & Peptide Connection</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@capacitor/core@latest/dist/capacitor.js"></script>
   <style>
     :root {
       --bg: #0b0f19;
@@ -19,7 +20,7 @@
       --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
-    body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; min-height: 100vh; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 85px; min-height: 100vh; }
 
     header {
       background-color: var(--card-bg);
@@ -73,6 +74,14 @@
       cursor: pointer;
     }
     .btn-primary:active { background: var(--primary-hover); }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      font-weight: 600;
+      cursor: pointer;
+    }
 
     .progress-bar {
       background: #0f172a;
@@ -154,7 +163,7 @@
     }
     nav.bottom-nav button {
       background: none; border: none;
-      color: var(--text-muted); font-size: 0.75rem;
+      color: var(--text-muted); font-size: 0.7rem;
       display: flex; flex-direction: column; align-items: center;
       width: auto; margin: 0; padding: 0;
     }
@@ -194,7 +203,7 @@
       </div>
     </div>
 
-    <!-- Vial Stability Tracker -->
+    <!-- Vial Shelf-Life Tracker -->
     <div class="card">
       <h2>Active Vial Shelf-Life Tracker</h2>
       <input type="text" id="vial-compound" placeholder="Compound (e.g. BPC-157)" />
@@ -222,7 +231,6 @@
       <div class="progress-bar"><div class="progress-fill" id="goal-bar"></div></div>
     </div>
 
-    <!-- Editable Goals -->
     <div class="card">
       <h2>Set Daily Macro Goals</h2>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
@@ -250,17 +258,17 @@
     </div>
   </div>
 
-  <!-- PROTOCOLS VIEW -->
+  <!-- PROTOCOLS & REMINDERS VIEW -->
   <div id="view-protocols" class="view">
     <div class="card">
-      <h2>Active Protocol Schedules</h2>
+      <h2>Add Protocol & Reminder</h2>
       <input type="text" id="proto-compound" placeholder="Compound (e.g., BPC-157)" />
       <input type="text" id="proto-dose" placeholder="Dose (e.g., 250 mcg)" />
-      <input type="text" id="proto-freq" placeholder="Frequency (e.g., Mon / Wed / Fri)" />
-      <button class="btn-primary" onclick="addProtocol()">Add to Schedule</button>
+      <input type="text" id="proto-freq" placeholder="Frequency (e.g., Daily, Mon/Wed/Fri)" />
+      <button class="btn-primary" onclick="addProtocol()">Save Protocol & Schedule</button>
     </div>
     <div class="card">
-      <h2>Your Schedule</h2>
+      <h2>Active Schedules</h2>
       <div id="protocol-list"><p style="text-align:center; padding:10px 0;">No active protocols logged.</p></div>
     </div>
   </div>
@@ -278,22 +286,19 @@
     </div>
   </div>
 
-  <!-- EDUCATION VIEW -->
-  <div id="view-library" class="view">
+  <!-- PROFILE & SETTINGS VIEW -->
+  <div id="view-profile" class="view">
     <div class="card">
-      <h2>Education & Verification</h2>
-      <details>
-        <summary>HPLC Purity & COA Verification</summary>
-        <p>Ensure purity exceeds 98%. Authentic RP-HPLC reports display a single sharp symmetrical peak without wide baseline drift. Check for consistent batch dates and third-party laboratory verification.</p>
-      </details>
-      <details>
-        <summary>BPC-157 & TB-500 (Tissue Repair)</summary>
-        <p>Standard healing protocols suggest 250–500 mcg BPC-157 once or twice daily, alongside TB-500 at 2–5 mg split across two weekly administrations.</p>
-      </details>
-      <details>
-        <summary>Muscle Preservation During Deficits</summary>
-        <p>Aim for 1.0–1.2g of protein per pound of lean body mass. When using metabolic peptides, ensure adequate amino acid pacing across 3–4 meals daily to safeguard nitrogen retention.</p>
-      </details>
+      <h2>Account Management</h2>
+      <p id="profile-email-display" style="margin-bottom: 12px;">Not signed in.</p>
+      <input type="password" id="profile-new-pass" placeholder="New Password" />
+      <button class="btn-secondary" onclick="updateUserPassword()">Update Password</button>
+    </div>
+
+    <div class="card">
+      <h2>Data Backup & Export</h2>
+      <p style="margin-bottom:12px;">Export all recorded nutritional entries to a spreadsheet file.</p>
+      <button class="btn-primary" onclick="exportMacroCSV()">Download Macro Log (CSV)</button>
     </div>
   </div>
 
@@ -303,7 +308,7 @@
     <button class="nav-btn" onclick="switchView('view-macros', this)">Macros</button>
     <button class="nav-btn" onclick="switchView('view-protocols', this)">Protocols</button>
     <button class="nav-btn" onclick="switchView('view-community', this)">Community</button>
-    <button class="nav-btn" onclick="switchView('view-library', this)">Library</button>
+    <button class="nav-btn" onclick="switchView('view-profile', this)">Profile</button>
   </nav>
 
   <script>
@@ -314,7 +319,7 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let currentUser = null;
     let isSignUpMode = false;
-    let calorieGoal = 2000;
+    let calorieGoal = parseInt(localStorage.getItem('wpc_cal_goal')) || 2000;
 
     function switchView(viewId, btn) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -351,6 +356,7 @@
       if (currentUser) {
         db.auth.signOut().then(() => {
           currentUser = null;
+          localStorage.removeItem('wpc_user');
           updateAuthUI();
           switchView('view-home');
         });
@@ -386,10 +392,20 @@
     }
 
     function updateAuthUI() {
-      document.getElementById('auth-status-btn').innerText = currentUser ? "Log Out" : "Sign In";
+      const btn = document.getElementById('auth-status-btn');
+      const emailDisplay = document.getElementById('profile-email-display');
+      if (currentUser) {
+        btn.innerText = "Log Out";
+        emailDisplay.innerText = "Logged in as: " + currentUser.email;
+      } else {
+        btn.innerText = "Sign In";
+        emailDisplay.innerText = "Not signed in.";
+      }
     }
 
+    // Init & Offline Cache hydration
     async function initSession() {
+      renderCachedData();
       const { data: { session } } = await db.auth.getSession();
       if (session) {
         currentUser = session.user;
@@ -398,6 +414,14 @@
       }
     }
     initSession();
+
+    function renderCachedData() {
+      const cachedLogs = JSON.parse(localStorage.getItem('wpc_cached_logs') || '[]');
+      const cachedProtos = JSON.parse(localStorage.getItem('wpc_cached_protos') || '[]');
+      if (cachedLogs.length > 0) renderMacroDOM(cachedLogs);
+      if (cachedProtos.length > 0) renderProtocolDOM(cachedProtos);
+      document.getElementById('goal-display').innerText = calorieGoal;
+    }
 
     function loadUserData() {
       loadProfileTargets();
@@ -412,6 +436,7 @@
       const { data } = await db.from('profiles').select('daily_calorie_target, daily_protein_target').eq('id', currentUser.id).single();
       if (data && data.daily_calorie_target) {
         calorieGoal = data.daily_calorie_target;
+        localStorage.setItem('wpc_cal_goal', calorieGoal);
         document.getElementById('goal-display').innerText = calorieGoal;
         document.getElementById('target-cal').value = calorieGoal;
         if (data.daily_protein_target) document.getElementById('target-pro').value = data.daily_protein_target;
@@ -425,6 +450,7 @@
 
       await db.from('profiles').upsert({ id: currentUser.id, email: currentUser.email, daily_calorie_target: cal, daily_protein_target: pro });
       calorieGoal = cal;
+      localStorage.setItem('wpc_cal_goal', cal);
       document.getElementById('goal-display').innerText = cal;
       loadMacroLogs();
       alert("Targets updated!");
@@ -452,6 +478,13 @@
     async function loadMacroLogs() {
       if (!currentUser) return;
       const { data } = await db.from('macro_logs').select('*').eq('user_id', currentUser.id).order('logged_at', { ascending: false });
+      if (data) {
+        localStorage.setItem('wpc_cached_logs', JSON.stringify(data));
+        renderMacroDOM(data);
+      }
+    }
+
+    function renderMacroDOM(data) {
       const container = document.getElementById('logs-container');
       let totCal = 0, totPro = 0, totCarb = 0, totFat = 0;
 
@@ -496,12 +529,39 @@
       document.getElementById('proto-compound').value = '';
       document.getElementById('proto-dose').value = '';
       document.getElementById('proto-freq').value = '';
+      
+      // Native Local Notification trigger if available
+      scheduleLocalAlert(compound_name, dosage);
       loadProtocols();
+    }
+
+    async function scheduleLocalAlert(compound, dose) {
+      try {
+        if (window.Capacitor && window.Capacitor.Plugins.LocalNotifications) {
+          await window.Capacitor.Plugins.LocalNotifications.schedule({
+            notifications: [{
+              title: "WPC Protocol Reminder",
+              body: `Time for your scheduled ${compound} (${dose}) administration.`,
+              id: Math.floor(Math.random() * 10000),
+              schedule: { at: new Date(Date.now() + 1000 * 60 * 60 * 24) }
+            }]
+          });
+        }
+      } catch (e) {
+        console.log("Notification notice:", e);
+      }
     }
 
     async function loadProtocols() {
       if (!currentUser) return;
       const { data } = await db.from('protocols').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+      if (data) {
+        localStorage.setItem('wpc_cached_protos', JSON.stringify(data));
+        renderProtocolDOM(data);
+      }
+    }
+
+    function renderProtocolDOM(data) {
       const container = document.getElementById('protocol-list');
       if (!data || data.length === 0) {
         container.innerHTML = `<p style="text-align:center; padding:10px 0;">No active protocols logged.</p>`;
@@ -520,7 +580,7 @@
       loadProtocols();
     }
 
-    // Vial Shelf-Life Tracker
+    // Vial Shelf-Life
     async function addVial() {
       if (!currentUser) return switchView('view-auth');
       const compound_name = document.getElementById('vial-compound').value.trim();
@@ -589,7 +649,7 @@
       const { data } = await db.from('community_posts').select('*').order('created_at', { ascending: false }).limit(20);
       const container = document.getElementById('posts-container');
       if (!data || data.length === 0) {
-        container.innerHTML = `<p style="text-align:center; padding:10px 0;">No discussions yet. Start the conversation!</p>`;
+        container.innerHTML = `<p style="text-align:center; padding:10px 0;">No discussions yet.</p>`;
       } else {
         container.innerHTML = data.map(p => `
           <div class="item-row" style="flex-direction:column; align-items:flex-start;">
@@ -601,6 +661,30 @@
           </div>
         `).join('');
       }
+    }
+
+    // Password Update & CSV Export
+    async function updateUserPassword() {
+      const newPass = document.getElementById('profile-new-pass').value;
+      if (!newPass || newPass.length < 6) return alert("Password must be at least 6 characters.");
+      const { error } = await db.auth.updateUser({ password: newPass });
+      if (error) alert(error.message);
+      else { alert("Password updated successfully!"); document.getElementById('profile-new-pass').value = ''; }
+    }
+
+    async function exportMacroCSV() {
+      const logs = JSON.parse(localStorage.getItem('wpc_cached_logs') || '[]');
+      if (logs.length === 0) return alert("No logs recorded to export.");
+      let csv = "Date,Food Name,Calories,Protein,Carbs,Fat\n";
+      logs.forEach(l => {
+        csv += `"${l.logged_at}","${l.food_name}",${l.calories},${l.protein},${l.carbs},${l.fat}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `WPC_Macro_Logs_${new Date().toISOString().slice(0,10)}.csv`);
+      a.click();
     }
   </script>
 </body>
