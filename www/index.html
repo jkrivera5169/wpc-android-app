@@ -5,26 +5,114 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Wellness & Peptide Connection</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@capacitor/core@latest/dist/capacitor.js"></script>
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: #131b2e;
-      --card-border: #1e293b;
-      --primary: #10b981;
-      --primary-hover: #059669;
-      --text: #f8fafc;
+      --bg-dark: #080d1a;
+      --bg-surface: #0f172a;
+      --card-bg: #141f36;
+      --card-border: #1e2e4f;
+      --teal-primary: #06b6d4;
+      --teal-glow: #0891b2;
+      --green-accent: #10b981;
+      --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --danger: #ef4444;
-      --warning: #f59e0b;
-      --accent: #38bdf8;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
-    body { background-color: var(--bg); color: var(--text); padding-bottom: 85px; min-height: 100vh; }
 
-    header {
-      background-color: var(--card-bg);
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
+    body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; }
+
+    /* AUTH GATE CONTAINER (Shown ONLY when logged out) */
+    #auth-screen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px;
+      background: radial-gradient(circle at top, #132347 0%, var(--bg-dark) 70%);
+    }
+
+    .auth-brand {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .brand-logo-badge {
+      width: 76px;
+      height: 76px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, var(--teal-primary), #0284c7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px auto;
+      box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3);
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .auth-brand h1 { font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    .auth-brand p { color: var(--text-muted); font-size: 0.9rem; margin-top: 6px; }
+
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    /* INPUTS & BUTTONS */
+    .input-group { margin-bottom: 14px; text-align: left; }
+    .input-group label { display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; font-weight: 600; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: var(--bg-surface);
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--teal-primary); }
+
+    .btn-main {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--teal-primary), var(--teal-glow));
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 6px;
+      box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+    }
+    .btn-main:active { opacity: 0.9; }
+
+    .auth-toggle-link {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 0.85rem;
+      color: var(--teal-primary);
+      cursor: pointer;
+    }
+
+    /* MAIN APP SHELL (Hidden until logged in) */
+    #app-shell { display: none; padding-bottom: 85px; }
+
+    header.app-header {
+      background: var(--card-bg);
       border-bottom: 1px solid var(--card-border);
       padding: 14px 20px;
       display: flex;
@@ -32,137 +120,63 @@
       align-items: center;
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 50;
     }
-    header h1 { font-size: 1.05rem; font-weight: 700; color: var(--primary); }
-    header button {
-      background: none;
+    header.app-header h2 { font-size: 1.1rem; font-weight: 800; color: var(--teal-primary); }
+    header.app-header button {
+      background: transparent;
       border: 1px solid var(--card-border);
       color: var(--text-muted);
       padding: 6px 12px;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 0.8rem;
     }
 
-    .view { display: none; padding: 16px; }
-    .view.active { display: block; }
+    .app-view { display: none; padding: 18px 16px; }
+    .app-view.active { display: block; }
 
     .card {
-      background-color: var(--card-bg);
+      background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 16px;
+      border-radius: 14px;
+      padding: 18px;
       margin-bottom: 16px;
     }
-    .card h2 { font-size: 1rem; margin-bottom: 10px; color: var(--text); }
-    .card p { color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; }
+    .card h3 { font-size: 1.05rem; margin-bottom: 10px; color: #fff; }
 
-    input, textarea, button, select {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
+    /* Macro Progress Rings / Grid */
+    .macro-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      text-align: center;
+      margin-top: 12px;
+    }
+    .macro-pill {
+      background: var(--bg-surface);
       border: 1px solid var(--card-border);
-      background: #0f172a;
-      color: var(--text);
-      margin-bottom: 10px;
-      font-size: 0.95rem;
+      padding: 10px 4px;
+      border-radius: 10px;
     }
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-    }
-    .btn-primary:active { background: var(--primary-hover); }
-
-    .btn-accent {
-      background: var(--accent);
-      color: #0b0f19;
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
-    }
+    .macro-pill span { display: block; font-size: 0.7rem; color: var(--text-muted); }
+    .macro-pill strong { font-size: 0.95rem; color: var(--teal-primary); margin-top: 2px; display: block; }
 
     .progress-bar {
-      background: #0f172a;
+      height: 8px;
+      background: var(--bg-surface);
       border-radius: 6px;
-      height: 10px;
       overflow: hidden;
-      margin: 8px 0 14px 0;
+      margin: 12px 0 6px 0;
       border: 1px solid var(--card-border);
     }
     .progress-fill {
-      background: var(--primary);
       height: 100%;
+      background: linear-gradient(90deg, var(--teal-primary), var(--green-accent));
       width: 0%;
       transition: width 0.3s ease;
     }
-    .macro-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    .macro-box {
-      background: #0f172a;
-      padding: 8px 4px;
-      border-radius: 8px;
-      border: 1px solid var(--card-border);
-    }
-    .macro-box span { display: block; font-size: 0.7rem; color: var(--text-muted); }
-    .macro-box strong { font-size: 0.9rem; color: var(--primary); }
 
-    .item-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--card-border);
-    }
-    .item-row:last-child { border-bottom: none; }
-    .btn-del {
-      background: none;
-      border: none;
-      color: var(--danger);
-      width: auto;
-      padding: 4px 8px;
-      font-size: 0.8rem;
-    }
-
-    .calc-result-box {
-      background: #0f172a;
-      border: 1px solid var(--primary);
-      border-radius: 8px;
-      padding: 14px;
-      text-align: center;
-      margin-top: 10px;
-    }
-    .calc-result-box h3 { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
-    .calc-result-box strong { font-size: 1.6rem; color: var(--primary); }
-
-    .coa-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      margin-top: 6px;
-    }
-    .coa-pass { background: rgba(16, 185, 129, 0.2); color: var(--primary); border: 1px solid var(--primary); }
-    .coa-fail { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
-
-    details {
-      background: #0f172a;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 10px;
-    }
-    summary { font-weight: 600; cursor: pointer; color: var(--accent); }
-    details p { margin-top: 8px; font-size: 0.85rem; }
-
+    /* Bottom Navigation */
     nav.bottom-nav {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -170,346 +184,295 @@
       border-top: 1px solid var(--card-border);
       display: flex;
       justify-content: space-around;
-      padding: 10px 0;
+      padding: 12px 0;
       z-index: 100;
     }
     nav.bottom-nav button {
       background: none; border: none;
-      color: var(--text-muted); font-size: 0.7rem;
-      display: flex; flex-direction: column; align-items: center;
-      width: auto; margin: 0; padding: 0;
+      color: var(--text-muted); font-size: 0.72rem;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      font-weight: 600;
     }
-    nav.bottom-nav button.active { color: var(--primary); font-weight: 700; }
+    nav.bottom-nav button.active { color: var(--teal-primary); }
+
+    .calc-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--teal-primary);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      margin-top: 12px;
+    }
+    .calc-box strong { font-size: 1.8rem; color: var(--teal-primary); display: block; }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .item-row:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>WPC Connection</h1>
-    <button id="auth-status-btn" onclick="handleAuthToggle()">Sign In</button>
-  </header>
+  <!-- 1. STRICT AUTH GATE SCREEN (ONLY SCREEN SHOWN WHEN LOGGED OUT) -->
+  <div id="auth-screen">
+    <div class="auth-brand">
+      <div class="brand-logo-badge">WPC</div>
+      <h1>Wellness & Peptide Connection</h1>
+      <p id="auth-subtitle">Sign in to access your protocols & macros</p>
+    </div>
 
-  <!-- AUTH VIEW -->
-  <div id="view-auth" class="view">
-    <div class="card">
-      <h2 id="auth-heading">Sign In to Your Account</h2>
-      <input type="email" id="auth-email" placeholder="Email address" />
-      <input type="password" id="auth-password" placeholder="Password" />
-      <button class="btn-primary" id="btn-submit-auth" onclick="executeAuth()">Sign In</button>
-      <p style="text-align:center; margin-top:8px; cursor:pointer;" onclick="toggleAuthMode()">
-        <span id="auth-toggle-label">Don't have an account? Sign up</span>
-      </p>
+    <div class="auth-card">
+      <div class="input-group">
+        <label>Email Address</label>
+        <input type="email" id="auth-email" placeholder="name@domain.com" />
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" />
+      </div>
+
+      <button class="btn-main" id="btn-auth-submit" onclick="handleAuth()">Sign In</button>
+      <div class="auth-toggle-link" id="auth-toggle-text" onclick="toggleAuthMode()">
+        Need an account? Create one here
+      </div>
     </div>
   </div>
 
-  <!-- HOME / CALC VIEW -->
-  <div id="view-home" class="view active">
-    <div class="card">
-      <h2>Peptide Reconstitution Calculator</h2>
-      <input type="number" id="calc-vial" placeholder="Vial Quantity (mg) e.g., 5" oninput="calculateDose()" />
-      <input type="number" id="calc-water" placeholder="BAC Water Added (mL) e.g., 2" oninput="calculateDose()" />
-      <input type="number" id="calc-dose" placeholder="Desired Dose (mcg) e.g., 250" oninput="calculateDose()" />
-      <div class="calc-result-box">
-        <h3>Syringe Draw Mark (U-100)</h3>
-        <strong id="calc-result">0 Units</strong>
+  <!-- 2. MAIN APPLICATION (REVEALED ONLY AFTER SUCCESSFUL LOGIN) -->
+  <div id="app-shell">
+    <header class="app-header">
+      <h2>WPC Connection</h2>
+      <button onclick="logout()">Sign Out</button>
+    </header>
+
+    <!-- TAB 1: DASHBOARD & CALCULATOR -->
+    <div id="tab-home" class="app-view active">
+      <div class="card">
+        <h3>Reconstitution Dosage Calculator</h3>
+        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:12px;">Instant U-100 syringe unit draw calculations.</p>
+        <div class="input-group">
+          <label>Vial Quantity (mg)</label>
+          <input type="number" id="calc-vial" placeholder="e.g. 5" oninput="runCalc()" />
+        </div>
+        <div class="input-group">
+          <label>BAC Water Added (mL)</label>
+          <input type="number" id="calc-water" placeholder="e.g. 2" oninput="runCalc()" />
+        </div>
+        <div class="input-group">
+          <label>Desired Dose (mcg)</label>
+          <input type="number" id="calc-dose" placeholder="e.g. 250" oninput="runCalc()" />
+        </div>
+        <div class="calc-box">
+          <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Draw Mark (U-100 Syringe)</span>
+          <strong id="calc-result">0 Units</strong>
+        </div>
+      </div>
+
+      <!-- Vial Shelf-Life Monitor -->
+      <div class="card">
+        <h3>Vial Stability Tracker</h3>
+        <input type="text" id="vial-compound" placeholder="Compound (e.g. BPC-157)" />
+        <input type="date" id="vial-date" />
+        <input type="number" id="vial-doses" placeholder="Total Doses (e.g. 20)" />
+        <button class="btn-main" onclick="addVial()">Track Reconstituted Vial</button>
+        <div id="vial-list" style="margin-top:12px;"></div>
       </div>
     </div>
 
-    <!-- Vial Shelf-Life Tracker -->
-    <div class="card">
-      <h2>Active Vial Shelf-Life Tracker</h2>
-      <input type="text" id="vial-compound" placeholder="Compound (e.g. BPC-157)" />
-      <input type="date" id="vial-date" />
-      <input type="number" id="vial-doses" placeholder="Total Doses in Vial (e.g. 20)" />
-      <button class="btn-primary" onclick="addVial()">Track Reconstituted Vial</button>
-      <div id="vial-list" style="margin-top:12px;"></div>
-    </div>
-  </div>
-
-  <!-- MACROS VIEW -->
-  <div id="view-macros" class="view">
-    <div class="card">
-      <h2>Today's Progress</h2>
-      <div class="macro-grid">
-        <div class="macro-box"><span>Calories</span><strong id="total-cal">0</strong></div>
-        <div class="macro-box"><span>Protein</span><strong id="total-pro">0g</strong></div>
-        <div class="macro-box"><span>Carbs</span><strong id="total-carb">0g</strong></div>
-        <div class="macro-box"><span>Fat</span><strong id="total-fat">0g</strong></div>
+    <!-- TAB 2: NUTRITION & MACROS -->
+    <div id="tab-macros" class="app-view">
+      <div class="card">
+        <h3>Daily Macro Progress</h3>
+        <div class="progress-bar"><div class="progress-fill" id="goal-bar"></div></div>
+        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+          <span>Target: <strong id="goal-target-text" style="color:#fff;">2000</strong> kcal</span>
+          <span id="goal-pct-text">0%</span>
+        </div>
+        <div class="macro-row">
+          <div class="macro-pill"><span>Calories</span><strong id="total-cal">0</strong></div>
+          <div class="macro-pill"><span>Protein</span><strong id="total-pro">0g</strong></div>
+          <div class="macro-pill"><span>Carbs</span><strong id="total-carb">0g</strong></div>
+          <div class="macro-pill"><span>Fat</span><strong id="total-fat">0g</strong></div>
+        </div>
       </div>
-      <div style="font-size:0.75rem; color:var(--text-muted); display:flex; justify-content:space-between;">
-        <span>Target: <span id="goal-display">2000</span> kcal</span>
-        <span id="goal-pct">0%</span>
+
+      <div class="card">
+        <h3>Log Food Entry</h3>
+        <input type="text" id="food-name" placeholder="Item Name (e.g. 8oz Ribeye)" />
+        <input type="number" id="food-cal" placeholder="Calories" />
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+          <input type="number" id="food-pro" placeholder="Pro (g)" />
+          <input type="number" id="food-carb" placeholder="Carb (g)" />
+          <input type="number" id="food-fat" placeholder="Fat (g)" />
+        </div>
+        <button class="btn-main" onclick="addMacro()">Add to Today's Log</button>
       </div>
-      <div class="progress-bar"><div class="progress-fill" id="goal-bar"></div></div>
-    </div>
 
-    <div class="card">
-      <h2>Set Daily Macro Goals</h2>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-        <input type="number" id="target-cal" placeholder="Calorie Target" />
-        <input type="number" id="target-pro" placeholder="Protein Goal (g)" />
+      <div class="card">
+        <h3>Logged Today</h3>
+        <div id="macro-logs-container"><p style="color:var(--text-muted); text-align:center; font-size:0.85rem;">No items recorded yet.</p></div>
       </div>
-      <button class="btn-primary" onclick="saveTargets()">Update Daily Goals</button>
     </div>
 
-    <div class="card">
-      <h2>Log Food / Meal</h2>
-      <input type="text" id="food-name" placeholder="Item Name (e.g. 6oz Chicken Breast)" />
-      <input type="number" id="food-cal" placeholder="Calories (kcal)" />
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
-        <input type="number" id="food-pro" placeholder="Protein (g)" />
-        <input type="number" id="food-carb" placeholder="Carbs (g)" />
-        <input type="number" id="food-fat" placeholder="Fat (g)" />
+    <!-- TAB 3: PROTOCOLS -->
+    <div id="tab-protocols" class="app-view">
+      <div class="card">
+        <h3>Schedule Regimen</h3>
+        <input type="text" id="proto-compound" placeholder="Compound (e.g. Tirzepatide)" />
+        <input type="text" id="proto-dose" placeholder="Dose (e.g. 2.5 mg)" />
+        <input type="text" id="proto-freq" placeholder="Cadence (e.g. Every Monday)" />
+        <button class="btn-main" onclick="addProtocol()">Save to Schedule</button>
       </div>
-      <button class="btn-primary" onclick="addMacroEntry()">Log Entry</button>
+      <div class="card">
+        <h3>Active Protocols</h3>
+        <div id="protocol-list"><p style="color:var(--text-muted); text-align:center; font-size:0.85rem;">No active schedules.</p></div>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Today's Entries</h2>
-      <div id="logs-container"><p style="text-align:center; padding:10px 0;">No entries yet today.</p></div>
+    <!-- TAB 4: COMMUNITY -->
+    <div id="tab-community" class="app-view">
+      <div class="card" style="border: 1px solid var(--teal-primary);">
+        <h3 style="color:var(--teal-primary);">The Wellness & Peptide Connection</h3>
+        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:12px;">Access discussion boards, courses, and member Q&As on Skool.</p>
+        <button class="btn-main" onclick="window.open('https://www.skool.com', '_system')">Open Skool Community</button>
+      </div>
+
+      <div class="card">
+        <h3>Post a Quick Note</h3>
+        <textarea id="post-content" rows="3" placeholder="Ask a question or log a victory..."></textarea>
+        <button class="btn-main" onclick="sharePost()">Post to Feed</button>
+      </div>
+
+      <div class="card">
+        <h3>Community Feed</h3>
+        <div id="feed-container"><p style="color:var(--text-muted); text-align:center; font-size:0.85rem;">Loading discussions...</p></div>
+      </div>
     </div>
+
+    <!-- TAB 5: LIBRARY & COA -->
+    <div id="tab-library" class="app-view">
+      <div class="card">
+        <h3>COA Purity & Mass Verifier</h3>
+        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:12px;">Verify third-party lab test reports.</p>
+        <input type="number" id="coa-purity" step="0.01" placeholder="HPLC Purity % (e.g. 99.4)" />
+        <input type="number" id="coa-expected" step="0.01" placeholder="Theoretical Mass Da (e.g. 1419.5)" />
+        <input type="number" id="coa-actual" step="0.01" placeholder="Observed MS Mass Da (e.g. 1419.4)" />
+        <button class="btn-main" onclick="verifyCOA()">Analyze Certificate</button>
+        <div id="coa-result" style="display:none; margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" onclick="showTab('tab-home', this)">Home</button>
+      <button class="nav-btn" onclick="showTab('tab-macros', this)">Macros</button>
+      <button class="nav-btn" onclick="showTab('tab-protocols', this)">Protocols</button>
+      <button class="nav-btn" onclick="showTab('tab-community', this)">Community</button>
+      <button class="nav-btn" onclick="showTab('tab-library', this)">Library</button>
+    </nav>
   </div>
-
-  <!-- PROTOCOLS VIEW -->
-  <div id="view-protocols" class="view">
-    <div class="card">
-      <h2>Add Protocol Schedule</h2>
-      <input type="text" id="proto-compound" placeholder="Compound (e.g., BPC-157)" />
-      <input type="text" id="proto-dose" placeholder="Dose (e.g., 250 mcg)" />
-      <input type="text" id="proto-freq" placeholder="Frequency (e.g., Mon / Wed / Fri)" />
-      <button class="btn-primary" onclick="addProtocol()">Save Protocol</button>
-    </div>
-    <div class="card">
-      <h2>Active Regimens</h2>
-      <div id="protocol-list"><p style="text-align:center; padding:10px 0;">No active protocols logged.</p></div>
-    </div>
-  </div>
-
-  <!-- COMMUNITY & SKOOL VIEW -->
-  <div id="view-community" class="view">
-    <div class="card" style="border: 1px solid var(--accent); background: #0c1c33;">
-      <h2 style="color: var(--accent);">Join The Wellness & Peptide Connection on Skool</h2>
-      <p style="margin-bottom: 12px;">Connect with fellow members, access workshop replays, protocol templates, and direct discussions.</p>
-      <button class="btn-accent" onclick="openSkoolCommunity()">Open Skool Community Hub</button>
-    </div>
-
-    <div class="card">
-      <h2>Quick Mobile Chat</h2>
-      <textarea id="post-content" rows="3" placeholder="Post a question or milestone..."></textarea>
-      <button class="btn-primary" onclick="createPost()">Share to In-App Board</button>
-    </div>
-
-    <div class="card">
-      <h2>Recent In-App Discussions</h2>
-      <div id="posts-container"><p style="text-align:center; padding:10px 0;">Loading discussions...</p></div>
-    </div>
-  </div>
-
-  <!-- EDUCATION & COA VERIFIER VIEW -->
-  <div id="view-library" class="view">
-    <div class="card">
-      <h2>Interactive COA / HPLC Purity Verifier</h2>
-      <p style="margin-bottom:12px;">Verify third-party laboratory Certificate of Analysis reports against purity and molecular mass baselines.</p>
-      <input type="text" id="coa-compound" placeholder="Compound Name (e.g. BPC-157)" />
-      <input type="number" id="coa-purity" step="0.01" placeholder="Reported Purity % (e.g. 99.2)" />
-      <input type="number" id="coa-expected-mass" step="0.01" placeholder="Expected Mass Da (e.g. 1419.5)" />
-      <input type="number" id="coa-actual-mass" step="0.01" placeholder="Observed Mass Da (e.g. 1419.4)" />
-      <button class="btn-primary" onclick="verifyCOA()">Analyze COA Parameters</button>
-      <div id="coa-result" style="display:none; margin-top:10px;"></div>
-    </div>
-
-    <div class="card">
-      <h2>Compound & Protocol Reference</h2>
-      <details>
-        <summary>HPLC Purity Standards (>98%)</summary>
-        <p>A legitimate RP-HPLC chromatogram displays a single sharp peak. Ghost peaks or broad baseline shoulders indicate degradation, cleavage fragments, or synthesis contaminants.</p>
-      </details>
-      <details>
-        <summary>Mass Spectrometry (ESI-MS / MALDI)</summary>
-        <p>Mass spectrometry confirms molecular identity. Observed mass must correspond to the theoretical molecular weight within ±1 Da tolerance.</p>
-      </details>
-      <details>
-        <summary>BPC-157 & TB-500 Synergy</summary>
-        <p>BPC-157 accelerates VEGFR2 expression and angiogenic tendon healing; TB-500 (Thymosin Beta-4 fragment) stimulates actin sequestration and cellular migration.</p>
-      </details>
-    </div>
-  </div>
-
-  <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
-    <button class="nav-btn active" onclick="switchView('view-home', this)">Home</button>
-    <button class="nav-btn" onclick="switchView('view-macros', this)">Macros</button>
-    <button class="nav-btn" onclick="switchView('view-protocols', this)">Protocols</button>
-    <button class="nav-btn" onclick="switchView('view-community', this)">Community</button>
-    <button class="nav-btn" onclick="switchView('view-library', this)">Library</button>
-  </nav>
 
   <script>
     const SUPABASE_URL = "https://ysscfbnoadsldemnvyfj.supabase.co";
-    // Using your active public anon key:
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzc2NmYm5vYWRzbGRlbW52eWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0ODM3MTMsImV4cCI6MjEwNTA1OTcxM30._TKn9HsMfgSplmDeZ9i2NNxUC8kdYyms9y7cMV3vWTk";
+    // Replace with your working anon key:
+    const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let currentUser = null;
-    let isSignUpMode = false;
-    let calorieGoal = parseInt(localStorage.getItem('wpc_cal_goal')) || 2000;
+    let isCreateAccountMode = false;
+    let calorieGoal = 2000;
 
-    function switchView(viewId, btn) {
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.getElementById(viewId).classList.add('active');
-      if (btn) {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      }
-      if (viewId === 'view-community') loadCommunityPosts();
-    }
-
-    function openSkoolCommunity() {
-      window.open('https://www.skool.com', '_system');
-    }
-
-    function calculateDose() {
-      const vialMg = parseFloat(document.getElementById('calc-vial').value) || 0;
-      const waterMl = parseFloat(document.getElementById('calc-water').value) || 0;
-      const doseMcg = parseFloat(document.getElementById('calc-dose').value) || 0;
-
-      if (vialMg > 0 && waterMl > 0 && doseMcg > 0) {
-        const concentration = (vialMg * 1000) / waterMl;
-        const units = Math.round((doseMcg / concentration) * 100 * 10) / 10;
-        document.getElementById('calc-result').innerText = units + " Units";
+    // Strict Auth Gate Check
+    async function checkAuthSession() {
+      const { data: { session } } = await db.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app-shell').style.display = 'block';
+        loadAppData();
       } else {
-        document.getElementById('calc-result').innerText = "0 Units";
+        document.getElementById('auth-screen').style.display = 'flex';
+        document.getElementById('app-shell').style.display = 'none';
       }
     }
-
-    function verifyCOA() {
-      const purity = parseFloat(document.getElementById('coa-purity').value) || 0;
-      const expected = parseFloat(document.getElementById('coa-expected-mass').value) || 0;
-      const actual = parseFloat(document.getElementById('coa-actual-mass').value) || 0;
-      const resultBox = document.getElementById('coa-result');
-
-      if (!purity || !expected || !actual) return alert("Fill in all COA analysis fields.");
-
-      const massDelta = Math.abs(expected - actual);
-      const isPurityPass = purity >= 98.0;
-      const isMassPass = massDelta <= 1.0;
-
-      let html = `<div style="background:#0f172a; border:1px solid var(--card-border); border-radius:8px; padding:12px;">`;
-      if (isPurityPass && isMassPass) {
-        html += `<span class="coa-badge coa-pass">VERIFICATION PASSED</span>`;
-        html += `<p style="margin-top:8px; color:var(--text); font-size:0.85rem;">Purity (${purity}%) meets clinical threshold (>=98.0%). Molecular mass delta (${massDelta.toFixed(2)} Da) is within the standard ±1 Da window.</p>`;
-      } else {
-        html += `<span class="coa-badge coa-fail">FLAGGED / INCONCLUSIVE</span>`;
-        html += `<p style="margin-top:8px; color:var(--danger); font-size:0.85rem;">`;
-        if (!isPurityPass) html += `• Purity below minimum standard of 98.0% (${purity}%).<br>`;
-        if (!isMassPass) html += `• Mass variance (${massDelta.toFixed(2)} Da) exceeds ±1 Da tolerance. Possible incorrect sequence or heavy salt variant.`;
-        html += `</p>`;
-      }
-      html += `</div>`;
-      resultBox.innerHTML = html;
-      resultBox.style.display = 'block';
-    }
+    checkAuthSession();
 
     function toggleAuthMode() {
-      isSignUpMode = !isSignUpMode;
-      document.getElementById('auth-heading').innerText = isSignUpMode ? "Create Account" : "Sign In";
-      document.getElementById('btn-submit-auth').innerText = isSignUpMode ? "Sign Up" : "Sign In";
-      document.getElementById('auth-toggle-label').innerText = isSignUpMode ? "Already registered? Sign in" : "Need an account? Sign up";
+      isCreateAccountMode = !isCreateAccountMode;
+      document.getElementById('auth-subtitle').innerText = isCreateAccountMode ? "Create your new account" : "Sign in to access your protocols & macros";
+      document.getElementById('btn-auth-submit').innerText = isCreateAccountMode ? "Create Account" : "Sign In";
+      document.getElementById('auth-toggle-text').innerText = isCreateAccountMode ? "Already registered? Sign in here" : "Need an account? Create one here";
     }
 
-    function handleAuthToggle() {
-      if (currentUser) {
-        db.auth.signOut().then(() => {
-          currentUser = null;
-          updateAuthUI();
-          switchView('view-home');
-        });
-      } else {
-        switchView('view-auth');
-      }
-    }
-
-    async function executeAuth() {
+    async function handleAuth() {
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
-      if (!email || !password) return alert("Enter email and password.");
+      if (!email || !password) return alert("Please fill in both fields.");
 
-      if (isSignUpMode) {
+      if (isCreateAccountMode) {
         const { data, error } = await db.auth.signUp({ email, password });
         if (error) alert(error.message);
         else {
           alert("Account created successfully!");
           currentUser = data.user;
-          updateAuthUI();
-          switchView('view-home');
+          checkAuthSession();
         }
       } else {
         const { data, error } = await db.auth.signInWithPassword({ email, password });
         if (error) alert(error.message);
         else {
           currentUser = data.user;
-          updateAuthUI();
-          loadUserData();
-          switchView('view-home');
+          checkAuthSession();
         }
       }
     }
 
-    function updateAuthUI() {
-      document.getElementById('auth-status-btn').innerText = currentUser ? "Log Out" : "Sign In";
+    async function logout() {
+      await db.auth.signOut();
+      currentUser = null;
+      checkAuthSession();
     }
 
-    async function initSession() {
-      const { data: { session } } = await db.auth.getSession();
-      if (session) {
-        currentUser = session.user;
-        updateAuthUI();
-        loadUserData();
+    function showTab(tabId, btn) {
+      document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (tabId === 'tab-community') loadFeed();
+    }
+
+    function runCalc() {
+      const mg = parseFloat(document.getElementById('calc-vial').value) || 0;
+      const ml = parseFloat(document.getElementById('calc-water').value) || 0;
+      const mcg = parseFloat(document.getElementById('calc-dose').value) || 0;
+
+      if (mg > 0 && ml > 0 && mcg > 0) {
+        const concentration = (mg * 1000) / ml;
+        const units = Math.round((mcg / concentration) * 100 * 10) / 10;
+        document.getElementById('calc-result').innerText = units + " Units";
+      } else {
+        document.getElementById('calc-result').innerText = "0 Units";
       }
     }
-    initSession();
 
-    function loadUserData() {
-      loadProfileTargets();
-      loadMacroLogs();
+    function loadAppData() {
+      loadMacros();
       loadProtocols();
       loadVials();
-      loadCommunityPosts();
+      loadFeed();
     }
 
-    async function loadProfileTargets() {
-      if (!currentUser) return;
-      const { data } = await db.from('profiles').select('daily_calorie_target, daily_protein_target').eq('id', currentUser.id).single();
-      if (data && data.daily_calorie_target) {
-        calorieGoal = data.daily_calorie_target;
-        localStorage.setItem('wpc_cal_goal', calorieGoal);
-        document.getElementById('goal-display').innerText = calorieGoal;
-        document.getElementById('target-cal').value = calorieGoal;
-        if (data.daily_protein_target) document.getElementById('target-pro').value = data.daily_protein_target;
-      }
-    }
-
-    async function saveTargets() {
-      if (!currentUser) return switchView('view-auth');
-      const cal = parseInt(document.getElementById('target-cal').value) || 2000;
-      const pro = parseInt(document.getElementById('target-pro').value) || 150;
-
-      await db.from('profiles').upsert({ id: currentUser.id, email: currentUser.email, daily_calorie_target: cal, daily_protein_target: pro });
-      calorieGoal = cal;
-      localStorage.setItem('wpc_cal_goal', cal);
-      document.getElementById('goal-display').innerText = cal;
-      loadMacroLogs();
-      alert("Targets updated!");
-    }
-
-    async function addMacroEntry() {
-      if (!currentUser) return switchView('view-auth');
+    async function addMacro() {
       const food_name = document.getElementById('food-name').value.trim();
       const calories = parseInt(document.getElementById('food-cal').value) || 0;
       const protein = parseInt(document.getElementById('food-pro').value) || 0;
       const carbs = parseInt(document.getElementById('food-carb').value) || 0;
       const fat = parseInt(document.getElementById('food-fat').value) || 0;
-
       if (!food_name) return alert("Enter item name");
 
       await db.from('macro_logs').insert([{ user_id: currentUser.id, food_name, calories, protein, carbs, fat }]);
@@ -518,24 +481,23 @@
       document.getElementById('food-pro').value = '';
       document.getElementById('food-carb').value = '';
       document.getElementById('food-fat').value = '';
-      loadMacroLogs();
+      loadMacros();
     }
 
-    async function loadMacroLogs() {
-      if (!currentUser) return;
+    async function loadMacros() {
       const { data } = await db.from('macro_logs').select('*').eq('user_id', currentUser.id).order('logged_at', { ascending: false });
-      const container = document.getElementById('logs-container');
+      const container = document.getElementById('macro-logs-container');
       let totCal = 0, totPro = 0, totCarb = 0, totFat = 0;
 
       if (!data || data.length === 0) {
-        container.innerHTML = `<p style="text-align:center; padding:10px 0;">No entries recorded today.</p>`;
+        container.innerHTML = `<p style="color:var(--text-muted); text-align:center; font-size:0.85rem;">No items recorded yet.</p>`;
       } else {
         container.innerHTML = data.map(i => {
           totCal += i.calories || 0; totPro += i.protein || 0; totCarb += i.carbs || 0; totFat += i.fat || 0;
           return `
             <div class="item-row">
               <div><strong>${i.food_name}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">${i.calories} kcal | ${i.protein}P | ${i.carbs}C | ${i.fat}F</span></div>
-              <button class="btn-del" onclick="deleteMacroEntry('${i.id}')">Delete</button>
+              <button style="background:none; border:none; color:var(--danger); cursor:pointer;" onclick="deleteMacro('${i.id}')">✕</button>
             </div>
           `;
         }).join('');
@@ -548,21 +510,19 @@
 
       const pct = Math.min(Math.round((totCal / calorieGoal) * 100), 100);
       document.getElementById('goal-bar').style.width = pct + '%';
-      document.getElementById('goal-pct').innerText = pct + '%';
+      document.getElementById('goal-pct-text').innerText = pct + '%';
     }
 
-    async function deleteMacroEntry(id) {
+    async function deleteMacro(id) {
       await db.from('macro_logs').delete().eq('id', id);
-      loadMacroLogs();
+      loadMacros();
     }
 
     async function addProtocol() {
-      if (!currentUser) return switchView('view-auth');
       const compound_name = document.getElementById('proto-compound').value.trim();
       const dosage = document.getElementById('proto-dose').value.trim();
       const frequency = document.getElementById('proto-freq').value.trim();
-
-      if (!compound_name || !dosage) return alert("Enter compound and dosage.");
+      if (!compound_name || !dosage) return alert("Enter compound and dose.");
 
       await db.from('protocols').insert([{ user_id: currentUser.id, compound_name, dosage, frequency }]);
       document.getElementById('proto-compound').value = '';
@@ -572,16 +532,15 @@
     }
 
     async function loadProtocols() {
-      if (!currentUser) return;
       const { data } = await db.from('protocols').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
       const container = document.getElementById('protocol-list');
       if (!data || data.length === 0) {
-        container.innerHTML = `<p style="text-align:center; padding:10px 0;">No active protocols logged.</p>`;
+        container.innerHTML = `<p style="color:var(--text-muted); text-align:center; font-size:0.85rem;">No active schedules.</p>`;
       } else {
         container.innerHTML = data.map(p => `
           <div class="item-row">
-            <div><strong>${p.compound_name}</strong> - ${p.dosage}<br><span style="font-size:0.75rem; color:var(--text-muted);">${p.frequency}</span></div>
-            <button class="btn-del" onclick="deleteProtocol('${p.id}')">Remove</button>
+            <div><strong>${p.compound_name}</strong> (${p.dosage})<br><span style="font-size:0.75rem; color:var(--text-muted);">${p.frequency}</span></div>
+            <button style="background:none; border:none; color:var(--danger); cursor:pointer;" onclick="deleteProtocol('${p.id}')">✕</button>
           </div>
         `).join('');
       }
@@ -593,12 +552,10 @@
     }
 
     async function addVial() {
-      if (!currentUser) return switchView('view-auth');
       const compound_name = document.getElementById('vial-compound').value.trim();
       const reconstituted_date = document.getElementById('vial-date').value;
       const total_doses = parseInt(document.getElementById('vial-doses').value) || 0;
-
-      if (!compound_name || !reconstituted_date || !total_doses) return alert("Fill in all vial fields.");
+      if (!compound_name || !reconstituted_date || !total_doses) return alert("Fill in vial fields.");
 
       await db.from('vial_trackers').insert([{ user_id: currentUser.id, compound_name, reconstituted_date, total_doses, doses_used: 0 }]);
       document.getElementById('vial-compound').value = '';
@@ -608,36 +565,21 @@
     }
 
     async function loadVials() {
-      if (!currentUser) return;
       const { data } = await db.from('vial_trackers').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
       const container = document.getElementById('vial-list');
       if (!data || data.length === 0) {
-        container.innerHTML = `<p style="text-align:center; padding:10px 0;">No vials currently tracked.</p>`;
+        container.innerHTML = `<p style="color:var(--text-muted); text-align:center; font-size:0.85rem;">No vials currently tracked.</p>`;
       } else {
         container.innerHTML = data.map(v => {
           const daysOld = Math.floor((new Date() - new Date(v.reconstituted_date)) / (1000 * 60 * 60 * 24));
-          const remaining = v.total_doses - v.doses_used;
           return `
             <div class="item-row">
-              <div>
-                <strong>${v.compound_name}</strong> (${remaining}/${v.total_doses} doses left)<br>
-                <span style="font-size:0.75rem; color:${daysOld > 28 ? 'var(--danger)' : 'var(--text-muted)'};">
-                  Reconstituted: ${daysOld} days ago ${daysOld > 28 ? '(Expiring Soon)' : ''}
-                </span>
-              </div>
-              <div>
-                <button style="width:auto; padding:4px 8px; font-size:0.75rem; margin-right:4px;" onclick="logVialDose('${v.id}', ${v.doses_used})">-1 Dose</button>
-                <button class="btn-del" onclick="deleteVial('${v.id}')">✕</button>
-              </div>
+              <div><strong>${v.compound_name}</strong><br><span style="font-size:0.75rem; color:${daysOld > 28 ? 'var(--danger)' : 'var(--text-muted)'};">${daysOld} days old</span></div>
+              <button style="background:none; border:none; color:var(--danger); cursor:pointer;" onclick="deleteVial('${v.id}')">✕</button>
             </div>
           `;
         }).join('');
       }
-    }
-
-    async function logVialDose(id, currentUsed) {
-      await db.from('vial_trackers').update({ doses_used: currentUsed + 1 }).eq('id', id);
-      loadVials();
     }
 
     async function deleteVial(id) {
@@ -645,32 +587,40 @@
       loadVials();
     }
 
-    async function createPost() {
-      if (!currentUser) return switchView('view-auth');
+    async function sharePost() {
       const content = document.getElementById('post-content').value.trim();
-      if (!content) return alert("Please enter a message.");
-
+      if (!content) return;
       await db.from('community_posts').insert([{ user_id: currentUser.id, author_email: currentUser.email.split('@')[0], content }]);
       document.getElementById('post-content').value = '';
-      loadCommunityPosts();
+      loadFeed();
     }
 
-    async function loadCommunityPosts() {
-      const { data } = await db.from('community_posts').select('*').order('created_at', { ascending: false }).limit(20);
-      const container = document.getElementById('posts-container');
+    async function loadFeed() {
+      const { data } = await db.from('community_posts').select('*').order('created_at', { ascending: false }).limit(15);
+      const container = document.getElementById('feed-container');
       if (!data || data.length === 0) {
-        container.innerHTML = `<p style="text-align:center; padding:10px 0;">No discussions yet.</p>`;
+        container.innerHTML = `<p style="color:var(--text-muted); text-align:center; font-size:0.85rem;">No posts yet.</p>`;
       } else {
         container.innerHTML = data.map(p => `
-          <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-            <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:4px;">
-              <span style="color:var(--accent); font-size:0.8rem; font-weight:600;">@${p.author_email}</span>
-              <span style="color:var(--text-muted); font-size:0.7rem;">${new Date(p.created_at).toLocaleDateString()}</span>
-            </div>
-            <p style="font-size:0.85rem; color:var(--text);">${p.content}</p>
+          <div style="padding:10px 0; border-bottom:1px solid var(--card-border);">
+            <span style="color:var(--teal-primary); font-size:0.8rem; font-weight:700;">@${p.author_email}</span>
+            <p style="font-size:0.85rem; color:#fff; margin-top:4px;">${p.content}</p>
           </div>
         `).join('');
       }
+    }
+
+    function verifyCOA() {
+      const purity = parseFloat(document.getElementById('coa-purity').value) || 0;
+      const exp = parseFloat(document.getElementById('coa-expected').value) || 0;
+      const act = parseFloat(document.getElementById('coa-actual').value) || 0;
+      const box = document.getElementById('coa-result');
+
+      const pass = (purity >= 98.0) && (Math.abs(exp - act) <= 1.0);
+      box.innerHTML = pass
+        ? `<span style="color:var(--green-accent); font-weight:700;">✓ Verification Passed (Purity ≥98%, Mass within ±1 Da)</span>`
+        : `<span style="color:var(--danger); font-weight:700;">⚠ Flagged (Below 98% purity or mass variance >1 Da)</span>`;
+      box.style.display = 'block';
     }
   </script>
 </body>
