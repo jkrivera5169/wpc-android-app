@@ -16,6 +16,7 @@
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --danger: #ef4444;
+      --warning: #f59e0b;
       --accent: #38bdf8;
       --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
@@ -75,11 +76,11 @@
     }
     .btn-primary:active { background: var(--primary-hover); }
 
-    .btn-secondary {
-      background: #1e293b;
-      color: var(--text);
-      border: 1px solid var(--card-border);
-      font-weight: 600;
+    .btn-accent {
+      background: var(--accent);
+      color: #0b0f19;
+      font-weight: 700;
+      border: none;
       cursor: pointer;
     }
 
@@ -141,6 +142,17 @@
     .calc-result-box h3 { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
     .calc-result-box strong { font-size: 1.6rem; color: var(--primary); }
 
+    .coa-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .coa-pass { background: rgba(16, 185, 129, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+    .coa-fail { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+
     details {
       background: #0f172a;
       border: 1px solid var(--card-border);
@@ -173,7 +185,7 @@
 <body>
 
   <header>
-    <h1>WPC Portal</h1>
+    <h1>WPC Connection</h1>
     <button id="auth-status-btn" onclick="handleAuthToggle()">Sign In</button>
   </header>
 
@@ -214,7 +226,7 @@
     </div>
   </div>
 
-  <!-- MACROS & TARGETS VIEW -->
+  <!-- MACROS VIEW -->
   <div id="view-macros" class="view">
     <div class="card">
       <h2>Today's Progress</h2>
@@ -258,47 +270,68 @@
     </div>
   </div>
 
-  <!-- PROTOCOLS & REMINDERS VIEW -->
+  <!-- PROTOCOLS VIEW -->
   <div id="view-protocols" class="view">
     <div class="card">
-      <h2>Add Protocol & Reminder</h2>
+      <h2>Add Protocol Schedule</h2>
       <input type="text" id="proto-compound" placeholder="Compound (e.g., BPC-157)" />
       <input type="text" id="proto-dose" placeholder="Dose (e.g., 250 mcg)" />
-      <input type="text" id="proto-freq" placeholder="Frequency (e.g., Daily, Mon/Wed/Fri)" />
-      <button class="btn-primary" onclick="addProtocol()">Save Protocol & Schedule</button>
+      <input type="text" id="proto-freq" placeholder="Frequency (e.g., Mon / Wed / Fri)" />
+      <button class="btn-primary" onclick="addProtocol()">Save Protocol</button>
     </div>
     <div class="card">
-      <h2>Active Schedules</h2>
+      <h2>Active Regimens</h2>
       <div id="protocol-list"><p style="text-align:center; padding:10px 0;">No active protocols logged.</p></div>
     </div>
   </div>
 
-  <!-- COMMUNITY FEED VIEW -->
+  <!-- COMMUNITY & SKOOL VIEW -->
   <div id="view-community" class="view">
-    <div class="card">
-      <h2>Community Hub</h2>
-      <textarea id="post-content" rows="3" placeholder="Share a protocol question or result..."></textarea>
-      <button class="btn-primary" onclick="createPost()">Share Post</button>
+    <div class="card" style="border: 1px solid var(--accent); background: #0c1c33;">
+      <h2 style="color: var(--accent);">Join The Wellness & Peptide Connection on Skool</h2>
+      <p style="margin-bottom: 12px;">Connect with fellow members, access workshop replays, protocol templates, and direct discussions.</p>
+      <button class="btn-accent" onclick="openSkoolCommunity()">Open Skool Community Hub</button>
     </div>
+
     <div class="card">
-      <h2>Recent Discussions</h2>
+      <h2>Quick Mobile Chat</h2>
+      <textarea id="post-content" rows="3" placeholder="Post a question or milestone..."></textarea>
+      <button class="btn-primary" onclick="createPost()">Share to In-App Board</button>
+    </div>
+
+    <div class="card">
+      <h2>Recent In-App Discussions</h2>
       <div id="posts-container"><p style="text-align:center; padding:10px 0;">Loading discussions...</p></div>
     </div>
   </div>
 
-  <!-- PROFILE & SETTINGS VIEW -->
-  <div id="view-profile" class="view">
+  <!-- EDUCATION & COA VERIFIER VIEW -->
+  <div id="view-library" class="view">
     <div class="card">
-      <h2>Account Management</h2>
-      <p id="profile-email-display" style="margin-bottom: 12px;">Not signed in.</p>
-      <input type="password" id="profile-new-pass" placeholder="New Password" />
-      <button class="btn-secondary" onclick="updateUserPassword()">Update Password</button>
+      <h2>Interactive COA / HPLC Purity Verifier</h2>
+      <p style="margin-bottom:12px;">Verify third-party laboratory Certificate of Analysis reports against purity and molecular mass baselines.</p>
+      <input type="text" id="coa-compound" placeholder="Compound Name (e.g. BPC-157)" />
+      <input type="number" id="coa-purity" step="0.01" placeholder="Reported Purity % (e.g. 99.2)" />
+      <input type="number" id="coa-expected-mass" step="0.01" placeholder="Expected Mass Da (e.g. 1419.5)" />
+      <input type="number" id="coa-actual-mass" step="0.01" placeholder="Observed Mass Da (e.g. 1419.4)" />
+      <button class="btn-primary" onclick="verifyCOA()">Analyze COA Parameters</button>
+      <div id="coa-result" style="display:none; margin-top:10px;"></div>
     </div>
 
     <div class="card">
-      <h2>Data Backup & Export</h2>
-      <p style="margin-bottom:12px;">Export all recorded nutritional entries to a spreadsheet file.</p>
-      <button class="btn-primary" onclick="exportMacroCSV()">Download Macro Log (CSV)</button>
+      <h2>Compound & Protocol Reference</h2>
+      <details>
+        <summary>HPLC Purity Standards (>98%)</summary>
+        <p>A legitimate RP-HPLC chromatogram displays a single sharp peak. Ghost peaks or broad baseline shoulders indicate degradation, cleavage fragments, or synthesis contaminants.</p>
+      </details>
+      <details>
+        <summary>Mass Spectrometry (ESI-MS / MALDI)</summary>
+        <p>Mass spectrometry confirms molecular identity. Observed mass must correspond to the theoretical molecular weight within ±1 Da tolerance.</p>
+      </details>
+      <details>
+        <summary>BPC-157 & TB-500 Synergy</summary>
+        <p>BPC-157 accelerates VEGFR2 expression and angiogenic tendon healing; TB-500 (Thymosin Beta-4 fragment) stimulates actin sequestration and cellular migration.</p>
+      </details>
     </div>
   </div>
 
@@ -308,12 +341,12 @@
     <button class="nav-btn" onclick="switchView('view-macros', this)">Macros</button>
     <button class="nav-btn" onclick="switchView('view-protocols', this)">Protocols</button>
     <button class="nav-btn" onclick="switchView('view-community', this)">Community</button>
-    <button class="nav-btn" onclick="switchView('view-profile', this)">Profile</button>
+    <button class="nav-btn" onclick="switchView('view-library', this)">Library</button>
   </nav>
 
   <script>
     const SUPABASE_URL = "https://ysscfbnoadsldemnvyfj.supabase.co";
-    // Replace with your working anon public key:
+    // Using your active public anon key:
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzc2NmYm5vYWRzbGRlbW52eWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0ODM3MTMsImV4cCI6MjEwNTA1OTcxM30._TKn9HsMfgSplmDeZ9i2NNxUC8kdYyms9y7cMV3vWTk";
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -331,6 +364,10 @@
       if (viewId === 'view-community') loadCommunityPosts();
     }
 
+    function openSkoolCommunity() {
+      window.open('https://www.skool.com', '_system');
+    }
+
     function calculateDose() {
       const vialMg = parseFloat(document.getElementById('calc-vial').value) || 0;
       const waterMl = parseFloat(document.getElementById('calc-water').value) || 0;
@@ -345,6 +382,34 @@
       }
     }
 
+    function verifyCOA() {
+      const purity = parseFloat(document.getElementById('coa-purity').value) || 0;
+      const expected = parseFloat(document.getElementById('coa-expected-mass').value) || 0;
+      const actual = parseFloat(document.getElementById('coa-actual-mass').value) || 0;
+      const resultBox = document.getElementById('coa-result');
+
+      if (!purity || !expected || !actual) return alert("Fill in all COA analysis fields.");
+
+      const massDelta = Math.abs(expected - actual);
+      const isPurityPass = purity >= 98.0;
+      const isMassPass = massDelta <= 1.0;
+
+      let html = `<div style="background:#0f172a; border:1px solid var(--card-border); border-radius:8px; padding:12px;">`;
+      if (isPurityPass && isMassPass) {
+        html += `<span class="coa-badge coa-pass">VERIFICATION PASSED</span>`;
+        html += `<p style="margin-top:8px; color:var(--text); font-size:0.85rem;">Purity (${purity}%) meets clinical threshold (>=98.0%). Molecular mass delta (${massDelta.toFixed(2)} Da) is within the standard ±1 Da window.</p>`;
+      } else {
+        html += `<span class="coa-badge coa-fail">FLAGGED / INCONCLUSIVE</span>`;
+        html += `<p style="margin-top:8px; color:var(--danger); font-size:0.85rem;">`;
+        if (!isPurityPass) html += `• Purity below minimum standard of 98.0% (${purity}%).<br>`;
+        if (!isMassPass) html += `• Mass variance (${massDelta.toFixed(2)} Da) exceeds ±1 Da tolerance. Possible incorrect sequence or heavy salt variant.`;
+        html += `</p>`;
+      }
+      html += `</div>`;
+      resultBox.innerHTML = html;
+      resultBox.style.display = 'block';
+    }
+
     function toggleAuthMode() {
       isSignUpMode = !isSignUpMode;
       document.getElementById('auth-heading').innerText = isSignUpMode ? "Create Account" : "Sign In";
@@ -356,7 +421,6 @@
       if (currentUser) {
         db.auth.signOut().then(() => {
           currentUser = null;
-          localStorage.removeItem('wpc_user');
           updateAuthUI();
           switchView('view-home');
         });
@@ -392,20 +456,10 @@
     }
 
     function updateAuthUI() {
-      const btn = document.getElementById('auth-status-btn');
-      const emailDisplay = document.getElementById('profile-email-display');
-      if (currentUser) {
-        btn.innerText = "Log Out";
-        emailDisplay.innerText = "Logged in as: " + currentUser.email;
-      } else {
-        btn.innerText = "Sign In";
-        emailDisplay.innerText = "Not signed in.";
-      }
+      document.getElementById('auth-status-btn').innerText = currentUser ? "Log Out" : "Sign In";
     }
 
-    // Init & Offline Cache hydration
     async function initSession() {
-      renderCachedData();
       const { data: { session } } = await db.auth.getSession();
       if (session) {
         currentUser = session.user;
@@ -414,14 +468,6 @@
       }
     }
     initSession();
-
-    function renderCachedData() {
-      const cachedLogs = JSON.parse(localStorage.getItem('wpc_cached_logs') || '[]');
-      const cachedProtos = JSON.parse(localStorage.getItem('wpc_cached_protos') || '[]');
-      if (cachedLogs.length > 0) renderMacroDOM(cachedLogs);
-      if (cachedProtos.length > 0) renderProtocolDOM(cachedProtos);
-      document.getElementById('goal-display').innerText = calorieGoal;
-    }
 
     function loadUserData() {
       loadProfileTargets();
@@ -478,13 +524,6 @@
     async function loadMacroLogs() {
       if (!currentUser) return;
       const { data } = await db.from('macro_logs').select('*').eq('user_id', currentUser.id).order('logged_at', { ascending: false });
-      if (data) {
-        localStorage.setItem('wpc_cached_logs', JSON.stringify(data));
-        renderMacroDOM(data);
-      }
-    }
-
-    function renderMacroDOM(data) {
       const container = document.getElementById('logs-container');
       let totCal = 0, totPro = 0, totCarb = 0, totFat = 0;
 
@@ -529,39 +568,12 @@
       document.getElementById('proto-compound').value = '';
       document.getElementById('proto-dose').value = '';
       document.getElementById('proto-freq').value = '';
-      
-      // Native Local Notification trigger if available
-      scheduleLocalAlert(compound_name, dosage);
       loadProtocols();
-    }
-
-    async function scheduleLocalAlert(compound, dose) {
-      try {
-        if (window.Capacitor && window.Capacitor.Plugins.LocalNotifications) {
-          await window.Capacitor.Plugins.LocalNotifications.schedule({
-            notifications: [{
-              title: "WPC Protocol Reminder",
-              body: `Time for your scheduled ${compound} (${dose}) administration.`,
-              id: Math.floor(Math.random() * 10000),
-              schedule: { at: new Date(Date.now() + 1000 * 60 * 60 * 24) }
-            }]
-          });
-        }
-      } catch (e) {
-        console.log("Notification notice:", e);
-      }
     }
 
     async function loadProtocols() {
       if (!currentUser) return;
       const { data } = await db.from('protocols').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-      if (data) {
-        localStorage.setItem('wpc_cached_protos', JSON.stringify(data));
-        renderProtocolDOM(data);
-      }
-    }
-
-    function renderProtocolDOM(data) {
       const container = document.getElementById('protocol-list');
       if (!data || data.length === 0) {
         container.innerHTML = `<p style="text-align:center; padding:10px 0;">No active protocols logged.</p>`;
@@ -580,7 +592,6 @@
       loadProtocols();
     }
 
-    // Vial Shelf-Life
     async function addVial() {
       if (!currentUser) return switchView('view-auth');
       const compound_name = document.getElementById('vial-compound').value.trim();
@@ -634,7 +645,6 @@
       loadVials();
     }
 
-    // Community Feed
     async function createPost() {
       if (!currentUser) return switchView('view-auth');
       const content = document.getElementById('post-content').value.trim();
@@ -661,30 +671,6 @@
           </div>
         `).join('');
       }
-    }
-
-    // Password Update & CSV Export
-    async function updateUserPassword() {
-      const newPass = document.getElementById('profile-new-pass').value;
-      if (!newPass || newPass.length < 6) return alert("Password must be at least 6 characters.");
-      const { error } = await db.auth.updateUser({ password: newPass });
-      if (error) alert(error.message);
-      else { alert("Password updated successfully!"); document.getElementById('profile-new-pass').value = ''; }
-    }
-
-    async function exportMacroCSV() {
-      const logs = JSON.parse(localStorage.getItem('wpc_cached_logs') || '[]');
-      if (logs.length === 0) return alert("No logs recorded to export.");
-      let csv = "Date,Food Name,Calories,Protein,Carbs,Fat\n";
-      logs.forEach(l => {
-        csv += `"${l.logged_at}","${l.food_name}",${l.calories},${l.protein},${l.carbs},${l.fat}\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.setAttribute('href', url);
-      a.setAttribute('download', `WPC_Macro_Logs_${new Date().toISOString().slice(0,10)}.csv`);
-      a.click();
     }
   </script>
 </body>
